@@ -323,15 +323,15 @@ override fun onCreate() {
 ### Backend Testing
 ```bash
 # Health check
-curl https://your-backend-url.com/health
+curl https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/health
 
 # Create upload URL
-curl -X POST https://your-backend-url.com/create-upload \
+curl -X POST https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/create-upload \
   -H "Content-Type: application/json" \
   -d '{"filename":"test.mp4","contentType":"video/mp4"}'
 
 # Get asset details
-curl https://your-backend-url.com/asset/your_asset_id
+curl https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/asset/your_asset_id
 ```
 
 ### Android App Testing

@@ -8,6 +8,8 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.runBlocking
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -38,12 +40,37 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideAuthInterceptor(firebaseAuth: FirebaseAuth): Interceptor {
+        return Interceptor { chain ->
+            val original = chain.request()
+            
+            // Get the current user's ID token
+            val token = runBlocking {
+                try {
+                    firebaseAuth.currentUser?.getIdToken(false)?.await()?.token
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            
+            val requestBuilder = original.newBuilder()
+            if (token != null) {
+                requestBuilder.header("Authorization", "Bearer $token")
+            }
+            
+            chain.proceed(requestBuilder.build())
+        }
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
         
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .build()
     }
@@ -52,7 +79,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://your-backend-url.com/") // Replace with your deployed backend URL
+            .baseUrl("https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

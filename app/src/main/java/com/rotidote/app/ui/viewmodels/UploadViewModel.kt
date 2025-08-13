@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.rotidote.app.data.models.Video
 import com.rotidote.app.data.services.FirestoreService
 import com.rotidote.app.data.services.MuxService
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class UploadViewModel @Inject constructor(
     private val firestoreService: FirestoreService,
-    private val muxService: MuxService
+    private val muxService: MuxService,
+    private val firebaseAuth: FirebaseAuth
 ) : ViewModel() {
 
     private val _isUploading = MutableStateFlow(false)
@@ -48,6 +50,12 @@ class UploadViewModel @Inject constructor(
             _uploadSuccess.value = false
 
             try {
+                // Check if user is authenticated
+                if (firebaseAuth.currentUser == null) {
+                    _error.value = "User not authenticated. Please log in again."
+                    return@launch
+                }
+
                 // Upload ad video to Mux
                 _uploadProgress.value = 0.1f
                 val adVideoResult = muxService.uploadVideoToMux(adVideoUri, context)
@@ -88,12 +96,28 @@ class UploadViewModel @Inject constructor(
                         _uploadSuccess.value = true
                     },
                     onFailure = { exception ->
-                        _error.value = exception.message ?: "Failed to save video"
+                        _error.value = when {
+                            exception.message?.contains("permission-denied") == true -> 
+                                "Permission denied. Please check your authentication."
+                            exception.message?.contains("unavailable") == true -> 
+                                "Service temporarily unavailable. Please try again."
+                            else -> exception.message ?: "Failed to save video to database"
+                        }
                     }
                 )
 
             } catch (e: Exception) {
-                _error.value = e.message ?: "Upload failed"
+                _error.value = when {
+                    e.message?.contains("401") == true -> 
+                        "Authentication failed. Please log in again."
+                    e.message?.contains("403") == true -> 
+                        "Access denied. Please check your permissions."
+                    e.message?.contains("network") == true -> 
+                        "Network error. Please check your connection."
+                    e.message?.contains("timeout") == true -> 
+                        "Upload timeout. Please try again."
+                    else -> e.message ?: "Upload failed. Please try again."
+                }
             } finally {
                 _isUploading.value = false
             }
