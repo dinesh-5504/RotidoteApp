@@ -12,6 +12,8 @@ data class Video(
     val duration: Long = 0L,
     val adVideoMuxKey: String = "",
     val mainVideoMuxKey: String = "",
+    val adVideoPlaybackUrl: String = "",
+    val mainVideoPlaybackUrl: String = "",
     val thumbnailUrl: String = "",
     val likes: Int = 0,
     val dislikes: Int = 0,

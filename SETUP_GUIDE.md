@@ -141,16 +141,8 @@ fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
 }
 ```
 
-#### Update Cloudinary Configuration
-Edit `app/src/main/java/com/rotidote/app/RotidoteApplication.kt`:
-```kotlin
-override fun onCreate() {
-    super.onCreate()
-    
-    // Initialize Cloudinary
-    cloudinaryService.initialize(this, "your_cloudinary_cloud_name") // Replace with your cloud name
-}
-```
+#### Cloudinary Configuration (Backend)
+Cloudinary is now handled by the backend. No Android app configuration needed.
 
 ### 3. Build and Run
 1. Connect an Android device or start an emulator
@@ -250,21 +242,21 @@ curl -X POST http://localhost:3000/create-upload \
 1. In your Cloudinary dashboard, note your "Cloud name"
 2. It's displayed at the top of the dashboard
 
-### 3. Update Android App
-Edit `app/src/main/java/com/rotidote/app/RotidoteApplication.kt`:
-```kotlin
-override fun onCreate() {
-    super.onCreate()
-    
-    // Initialize Cloudinary
-    cloudinaryService.initialize(this, "your_cloud_name_here")
-}
+### 3. Update Backend Environment
+Add the credentials to your backend `.env` file:
+```env
+CLOUDINARY_CLOUD_NAME=your_cloud_name_here
+CLOUDINARY_API_KEY=your_api_key_here
+CLOUDINARY_API_SECRET=your_api_secret_here
 ```
 
 ### 4. Test Cloudinary Integration
-1. Build and run the Android app
-2. Go to the Upload screen
-3. Try uploading an image as a thumbnail
+1. Restart your backend server
+2. Test the thumbnail upload endpoint:
+```bash
+curl -X POST http://localhost:3000/upload-thumbnail \
+  -F "thumbnail=@/path/to/your/image.jpg"
+```
 
 ## Deployment
 
@@ -291,6 +283,9 @@ override fun onCreate() {
    - Add:
      - `MUX_TOKEN_ID`: Your Mux Token ID
      - `MUX_TOKEN_SECRET`: Your Mux Token Secret
+     - `CLOUDINARY_CLOUD_NAME`: Your Cloudinary Cloud Name
+     - `CLOUDINARY_API_KEY`: Your Cloudinary API Key
+     - `CLOUDINARY_API_SECRET`: Your Cloudinary API Secret
      - `NODE_ENV`: `production`
      - `ALLOWED_ORIGINS`: Your app's domain
 
@@ -329,6 +324,10 @@ curl https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/health
 curl -X POST https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/create-upload \
   -H "Content-Type: application/json" \
   -d '{"filename":"test.mp4","contentType":"video/mp4"}'
+
+# Upload thumbnail
+curl -X POST https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/upload-thumbnail \
+  -F "thumbnail=@/path/to/your/image.jpg"
 
 # Get asset details
 curl https://backend-nfyoqvmdy-dineshs-projects-aad49f55.vercel.app/asset/your_asset_id

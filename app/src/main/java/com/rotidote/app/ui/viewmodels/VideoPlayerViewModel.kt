@@ -59,19 +59,9 @@ class VideoPlayerViewModel @Inject constructor(
     
     private suspend fun loadVideoUrls(video: Video) {
         try {
-            // Load ad video URL
-            val adUrlResult = muxService.getVideoPlaybackUrl(video.adVideoMuxKey)
-            adUrlResult.fold(
-                onSuccess = { url -> _adVideoUrl.value = url },
-                onFailure = { exception -> _error.value = "Failed to load ad video: ${exception.message}" }
-            )
-            
-            // Load main video URL
-            val mainUrlResult = muxService.getVideoPlaybackUrl(video.mainVideoMuxKey)
-            mainUrlResult.fold(
-                onSuccess = { url -> _mainVideoUrl.value = url },
-                onFailure = { exception -> _error.value = "Failed to load main video: ${exception.message}" }
-            )
+            // Use playback URLs directly from the video object
+            _adVideoUrl.value = video.adVideoPlaybackUrl
+            _mainVideoUrl.value = video.mainVideoPlaybackUrl
         } catch (e: Exception) {
             _error.value = e.message ?: "Failed to load video URLs"
         }

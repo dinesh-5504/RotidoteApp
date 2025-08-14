@@ -1,7 +1,12 @@
 package com.rotidote.app.data.services
 
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
 import okhttp3.MultipartBody
-import retrofit2.http.*
+import retrofit2.http.Part
 
 interface BackendApiService {
     @POST("create-upload")
@@ -10,18 +15,11 @@ interface BackendApiService {
     @GET("asset/{assetId}")
     suspend fun getAssetDetails(@Path("assetId") assetId: String): AssetDetailsResponse
 
+    @POST("upload-thumbnail")
+    suspend fun uploadThumbnail(@Part thumbnail: MultipartBody.Part): ThumbnailUploadResponse
+
     @GET("health")
     suspend fun healthCheck(): HealthResponse
-
-    @POST("upload-video")
-    suspend fun uploadVideo(
-        @Part("creatorName") creatorName: String,
-        @Part("videoTitle") videoTitle: String,
-        @Part("duration") duration: String,
-        @Part adVideo: MultipartBody.Part,
-        @Part mainVideo: MultipartBody.Part,
-        @Part thumbnail: MultipartBody.Part
-    ): VideoUploadResponse
 }
 
 data class CreateUploadRequest(
@@ -37,50 +35,21 @@ data class CreateUploadResponse(
 
 data class AssetDetailsResponse(
     val assetId: String,
-    val playbackId: String?,
+    val playbackId: String,
     val status: String,
-    val duration: Double?,
-    val aspectRatio: String?,
-    val createdAt: String?
+    val duration: Double,
+    val aspectRatio: String,
+    val createdAt: String
+)
+
+data class ThumbnailUploadResponse(
+    val thumbnailUrl: String,
+    val publicId: String,
+    val width: Int,
+    val height: Int
 )
 
 data class HealthResponse(
     val status: String,
-    val timestamp: String,
-    val services: ServicesStatus
-)
-
-data class ServicesStatus(
-    val mux: Boolean,
-    val cloudinary: Boolean,
-    val firebase: Boolean
-)
-
-data class VideoUploadResponse(
-    val success: Boolean,
-    val videoId: String,
-    val message: String,
-    val data: VideoUploadData
-)
-
-data class VideoUploadData(
-    val adVideoAssetId: String,
-    val mainVideoAssetId: String,
-    val thumbnailUrl: String,
-    val videoData: VideoData
-)
-
-data class VideoData(
-    val title: String,
-    val creatorName: String,
-    val creatorId: String,
-    val duration: Double,
-    val adVideoMuxKey: String,
-    val mainVideoMuxKey: String,
-    val adVideoPlaybackId: String?,
-    val mainVideoPlaybackId: String?,
-    val thumbnailUrl: String,
-    val status: String,
-    val createdAt: String?,
-    val updatedAt: String?
+    val timestamp: String
 )
