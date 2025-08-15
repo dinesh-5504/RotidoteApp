@@ -45,7 +45,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://backend-o30y5wg99-dineshs-projects-aad49f55.vercel.app/")
+            .baseUrl("https://backend-ten-lovat.vercel.app/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

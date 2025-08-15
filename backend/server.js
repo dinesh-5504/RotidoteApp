@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize Mux client
-const muxClient = new Mux(
+const {Video} = new Mux(
   process.env.MUX_TOKEN_ID,
   process.env.MUX_TOKEN_SECRET
 );
@@ -34,6 +34,7 @@ const upload = multer({
 
 // Security middleware
 app.use(helmet());
+app.set('trust proxy', 1); // trust first proxy (Vercel / reverse proxy)
 
 // CORS configuration
 app.use(cors({
@@ -85,10 +86,10 @@ app.post('/create-upload', async (req, res) => {
     }
 
     // Create a Direct Upload
-    const upload = await muxClient.Video.Uploads.create({
+    const upload = await Video.Uploads.create({
       new_asset_settings: {
         playback_policy: ['public'],
-        mp4_support: 'standard'
+        // mp4_support: 'standard'
       },
       cors_origin: '*'
     });
@@ -119,7 +120,7 @@ app.get('/asset/:assetId', async (req, res) => {
       });
     }
 
-    const asset = await muxClient.Video.Assets.get(assetId);
+    const asset = await Video.Assets.get(assetId);
 
     res.json({
       assetId: asset.id,
