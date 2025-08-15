@@ -12,11 +12,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize Mux client
-const {Video} = new Mux(
+const muxClient = new Mux(
   process.env.MUX_TOKEN_ID,
   process.env.MUX_TOKEN_SECRET
 );
-
+const {Video} = muxClient;
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
