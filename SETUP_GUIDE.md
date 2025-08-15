@@ -310,8 +310,16 @@ curl -X POST http://localhost:3000/upload-thumbnail \
 1. Go to [vercel.com](https://vercel.com)
 2. Import GitHub repository
 3. Set root directory to `backend`
-4. Add environment variables
+4. Add environment variables:
+   - `MUX_TOKEN_ID`: Your Mux Token ID
+   - `MUX_TOKEN_SECRET`: Your Mux Token Secret
+   - `CLOUDINARY_CLOUD_NAME`: Your Cloudinary Cloud Name
+   - `CLOUDINARY_API_KEY`: Your Cloudinary API Key
+   - `CLOUDINARY_API_SECRET`: Your Cloudinary API Secret
+   - `NODE_ENV`: `production`
+   - `ALLOWED_ORIGINS`: Your app's domain
 5. Deploy
+6. Test the base route: `https://your-project.vercel.app/`
 
 ## Testing
 

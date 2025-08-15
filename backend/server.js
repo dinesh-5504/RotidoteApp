@@ -53,6 +53,21 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Base route for testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Rotidote Backend API is running!',
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      createUpload: '/create-upload',
+      assetDetails: '/asset/:assetId',
+      uploadThumbnail: '/upload-thumbnail'
+    }
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -179,12 +194,15 @@ app.use('*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Rotidote Backend server running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/health`);
-  console.log(`🎥 Mux upload endpoint: http://localhost:${PORT}/create-upload`);
-  console.log(`🖼️  Thumbnail upload endpoint: http://localhost:${PORT}/upload-thumbnail`);
-});
+// For Vercel serverless deployment
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Rotidote Backend server running on port ${PORT}`);
+    console.log(`📡 Health check: http://localhost:${PORT}/health`);
+    console.log(`🎥 Mux upload endpoint: http://localhost:${PORT}/create-upload`);
+    console.log(`🖼️  Thumbnail upload endpoint: http://localhost:${PORT}/upload-thumbnail`);
+  });
+}
 
 module.exports = app;
 
