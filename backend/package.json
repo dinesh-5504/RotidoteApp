@@ -9,7 +9,18 @@
     "vercel-build": "echo 'Build completed'",
     "test": "node test-api.js",
     "test:local": "BASE_URL=http://localhost:3000 node test-api.js",
-    "test:vercel": "BASE_URL=https://backend-k9pvbezgz-dineshs-projects-aad49f55.vercel.app node test-api.js"
+    "test:vercel": "BASE_URL=https://backend-ten-lovat.vercel.app/ node test-api.js",
+    "test:auth": "node run-auth-tests.js",
+    "test:auth:local": "cross-env BASE_URL=http://localhost:3000 node run-auth-tests.js",
+    "test:auth:vercel": "cross-env BASE_URL=https://backend-ten-lovat.vercel.app/ node run-auth-tests.js",
+    "test:auth:simple": "node test-auth.js",
+    "test:auth:simple:local": "cross-env BASE_URL=http://localhost:3000 node test-auth.js",
+    "test:auth:simple:vercel": "cross-env BASE_URL=https://backend-ten-lovat.vercel.app/ node test-auth.js",
+    "test:quick": "node quick-test.js",
+    "test:quick:local": "cross-env BASE_URL=http://localhost:3000 node quick-test.js",
+    "test:quick:vercel": "cross-env BASE_URL=https://backend-ten-lovat.vercel.app/ node quick-test.js",
+    "test:scaffold": "node test-scaffold.js",
+    "test:scaffold:local": "cross-env BASE_URL=http://localhost:3000 node test-scaffold.js"
   },
   "keywords": [
     "mux",
@@ -21,17 +32,19 @@
   "license": "MIT",
   "dependencies": {
     "@mux/mux-node": "^12.4.0",
+    "axios": "^1.11.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^13.5.0",
     "helmet": "^7.1.0",
     "multer": "^2.0.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "axios": "^1.6.0"
+    "cross-env": "^10.0.0",
+    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=18.0.0"
