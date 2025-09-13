@@ -86,7 +86,7 @@ if (missingVars.length > 0) {
   console.log('✅ All required environment variables are set');
 }
 
-const PORT = process.env.PORT || 3000;
+//const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, () => {
