@@ -1,39 +1,24 @@
 const admin = require('firebase-admin');
-const path = require("path");
-var serviceAccount = require(path.join(__dirname, "serviceAccountKey.json"));
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-// Initialize Firebase Admin SDK with service account credentials
-// Uses serviceAccountKey.json file for authentication
-let app;
+if (privateKey && privateKey.includes('\\n')) {
+  privateKey = privateKey.replace(/\\n/g, '\n');
+}
 
-try {
-  // Try to initialize with existing app
-  app = admin.app();
-} catch (error) {
-  // Initialize new app if none exists
-  app = admin.initializeApp({
-    //credential: admin.credential.applicationDefault(),
-    // Alternative: Use service account key file directly
-    credential: admin.credential.cert(serviceAccount),
-    projectId: process.env.FIREBASE_PROJECT_ID || 'rotidote-database'
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey,
+    }),
   });
 }
 
-// Get Firebase services
 const auth = admin.auth();
 const firestore = admin.firestore();
 
-// Configure Firestore settings
-firestore.settings({
-  timestampsInSnapshots: true
-});
-
-module.exports = {
-  auth,
-  firestore,
-  admin
-};
+module.exports = { auth, firestore, admin };

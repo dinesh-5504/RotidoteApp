@@ -86,8 +86,9 @@ if (missingVars.length > 0) {
   console.log('✅ All required environment variables are set');
 }
 
-// Start server
-if (process.env.NODE_ENV !== 'production') {
+const PORT = process.env.PORT || 3000;
+
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Rotidote Backend server running on port ${PORT}`);
     console.log(`📡 Health check: http://localhost:${PORT}/health`);
