@@ -6,6 +6,7 @@ require('dotenv').config();
 
 // Import routes
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Mount routes
 app.use('/auth', authRoutes);
+app.use('/admin', adminRoutes);
 
 // Base route
 app.get('/', (req, res) => {
@@ -46,6 +48,12 @@ app.get('/', (req, res) => {
         signup: 'POST /auth/signup',
         login: 'POST /auth/login',
         profile: 'GET /auth/profile'
+      },
+      admin: {
+        students: 'GET /admin/students',
+        sessions: 'GET /admin/sessions',
+        upload: 'POST /admin/upload',
+        analytics: 'GET /admin/analytics'
       }
     }
   });
