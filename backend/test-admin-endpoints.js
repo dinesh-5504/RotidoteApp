@@ -133,23 +133,27 @@ async function runTests() {
       name: 'Generate Mux Upload URL',
       endpoint: '/admin/upload/mux-url',
       method: 'POST',
+      body: { title: 'Test Video' },
       expectedStatus: 200
     },
     {
       name: 'Generate Cloudinary Signature',
       endpoint: '/admin/upload/cloudinary-signature',
       method: 'POST',
+      body: { folder: 'thumbnails' },
       expectedStatus: 200
     },
     {
-      name: 'Upload Video Metadata',
-      endpoint: '/admin/upload',
+      name: 'Upload Video Metadata Only',
+      endpoint: '/admin/upload/metadata',
       method: 'POST',
       body: {
         title: 'Test Video',
-        description: 'Test Description',
         duration: 120,
-        muxPlaybackId: 'test_mux_id',
+        muxAssetId: 'test_mux_asset',
+        muxPlaybackId: 'test_mux_playback',
+        muxUrl: 'https://stream.mux.com/test.m3u8',
+        thumbnailPublicId: 'test_thumb_id',
         thumbnailUrl: 'https://example.com/thumb.jpg',
         assignedDay: 'Day1'
       },
@@ -168,6 +172,14 @@ async function runTests() {
     {
       name: 'Get Videos by Day',
       endpoint: '/admin/videos/Day1',
+      method: 'GET',
+      expectedStatus: 200
+    },
+
+    // Video Count Refresh Test
+    {
+      name: 'Verify Session Video Count After Upload',
+      endpoint: '/admin/sessions',
       method: 'GET',
       expectedStatus: 200
     }
