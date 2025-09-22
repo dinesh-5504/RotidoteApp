@@ -55,19 +55,23 @@ class MainActivity : ComponentActivity() {
                     
                     // Handle navigation based on auth state changes
                     LaunchedEffect(authState) {
+                        Log.d("MainActivity", "🔄 Auth state changed: $authState")
                         when (val state = authState) {
                             is AuthState.Authenticated -> {
+                                Log.d("MainActivity", "✅ User authenticated with type: ${state.userType}")
                                 when (state.userType) {
                                     UserType.ADMIN -> {
                                         Log.d("MainActivity", "🔐 Admin authenticated - fetching token before navigation")
                                         // Fetch admin token immediately for first login
                                         authViewModel.fetchAdminToken()
                                         
+                                        Log.d("MainActivity", "🚀 Navigating to AdminDashboard")
                                         navController.navigate(Screen.AdminDashboard.route) {
                                             popUpTo(Screen.Login.route) { inclusive = true }
                                         }
                                     }
                                     UserType.STUDENT -> {
+                                        Log.d("MainActivity", "🎓 Student authenticated - navigating to Home")
                                         navController.navigate(Screen.Home.route) {
                                             popUpTo(Screen.Login.route) { inclusive = true }
                                         }
@@ -75,17 +79,25 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             is AuthState.ProfileIncomplete -> {
+                                Log.d("MainActivity", "📝 Profile incomplete - navigating to ProfileSetup")
                                 navController.navigate(Screen.ProfileSetup.route) {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
                             }
                             is AuthState.DaySessionsAvailable -> {
+                                Log.d("MainActivity", "📅 Day sessions available - navigating to DaySessionsHome")
                                 navController.navigate(Screen.DaySessionsHome.route) {
                                     popUpTo(Screen.Login.route) { inclusive = true }
                                 }
                             }
-                            else -> {
-                                // Stay on Login screen for Unauthenticated, Loading, or Error states
+                            is AuthState.Loading -> {
+                                Log.d("MainActivity", "⏳ Auth state is loading - staying on current screen")
+                            }
+                            is AuthState.Unauthenticated -> {
+                                Log.d("MainActivity", "❌ User unauthenticated - staying on Login screen")
+                            }
+                            is AuthState.Error -> {
+                                Log.d("MainActivity", "❌ Auth error: ${state.message} - staying on Login screen")
                             }
                         }
                     }

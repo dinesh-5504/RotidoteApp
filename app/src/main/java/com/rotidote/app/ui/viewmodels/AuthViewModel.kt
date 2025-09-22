@@ -219,11 +219,15 @@ class AuthViewModel @Inject constructor(
                 Log.d("AuthViewModel", "🔍 Checking student permitted days...")
                 val response = studentApiService.getPermittedDays()
                 
+                Log.d("AuthViewModel", "📊 API Response - success: ${response.success}, data: ${response.data}, error: ${response.error}")
+                
                 if (response.success && response.data != null && response.data.isNotEmpty()) {
                     Log.d("AuthViewModel", "✅ Student has ${response.data.size} permitted days - redirecting to DaySessions")
+                    Log.d("AuthViewModel", "📋 Permitted days: ${response.data.map { it.dayId }}")
                     _authState.value = AuthState.DaySessionsAvailable
                 } else {
                     Log.d("AuthViewModel", "ℹ️ Student has no permitted days - redirecting to regular Home")
+                    Log.d("AuthViewModel", "🔍 Response details - success: ${response.success}, data size: ${response.data?.size ?: 0}, error: ${response.error}")
                     _authState.value = AuthState.Authenticated(UserType.STUDENT)
                 }
             } catch (e: Exception) {

@@ -6,16 +6,22 @@ const router = express.Router();
 const verifyStudent = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    console.log(`🔐 [DEBUG] Student auth attempt - header present: ${!!authHeader}`);
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log(`❌ [DEBUG] No valid authorization header`);
       return res.status(401).json({ error: 'No authorization token provided' });
     }
 
     const token = authHeader.split('Bearer ')[1];
+    console.log(`🔍 [DEBUG] Token extracted, length: ${token.length}`);
+    
     const decodedToken = await admin.auth().verifyIdToken(token);
+    console.log(`✅ [DEBUG] Token verified for user: ${decodedToken.uid}, email: ${decodedToken.email}`);
     req.user = decodedToken;
     next();
   } catch (error) {
-    console.error('Student auth verification failed:', error);
+    console.error('❌ [DEBUG] Student auth verification failed:', error);
     res.status(401).json({ error: 'Invalid or expired token' });
   }
 };
@@ -24,6 +30,8 @@ const verifyStudent = async (req, res, next) => {
 router.get('/permitted-days', verifyStudent, async (req, res) => {
   try {
     const userId = req.user.uid;
+    console.log(`🔍 [DEBUG] Checking permitted days for user: ${userId}`);
+    
     const db = admin.firestore();
     
     // Get all sessions and check which ones the student is permitted for
@@ -31,16 +39,23 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
       .where('enabled', '==', true)
       .get();
     
+    console.log(`📊 [DEBUG] Found ${sessionsSnapshot.size} enabled sessions`);
+    
     const permittedDays = [];
     
     sessionsSnapshot.forEach(doc => {
       const session = doc.data();
+      console.log(`🔍 [DEBUG] Checking session ${session.dayId}: permittedStudents = ${session.permittedStudents}`);
+      
       if (session.permittedStudents && session.permittedStudents.includes(userId)) {
+        console.log(`✅ [DEBUG] User ${userId} is permitted for ${session.dayId}`);
         permittedDays.push({
           dayId: session.dayId,
           title: session.title,
           videoCount: session.videos ? session.videos.length : 0
         });
+      } else {
+        console.log(`❌ [DEBUG] User ${userId} is NOT permitted for ${session.dayId}`);
       }
     });
     
@@ -50,6 +65,8 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
       const bNum = parseInt(b.dayId.replace('Day', ''));
       return aNum - bNum;
     });
+    
+    console.log(`📋 [DEBUG] Final permitted days for user ${userId}: ${permittedDays.map(d => d.dayId)}`);
     
     res.json({
       permittedDays,

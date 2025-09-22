@@ -35,9 +35,16 @@ class StudentApiService @Inject constructor(
         method: String = "GET"
     ): ApiResponse<JSONObject> = withContext(Dispatchers.IO) {
         try {
-            val token = getAuthToken() ?: return@withContext ApiResponse(false, error = "No auth token")
+            val token = getAuthToken()
+            Log.d("StudentApiService", "🔑 Auth token present: ${token != null}")
+            if (token == null) {
+                Log.e("StudentApiService", "❌ No auth token available")
+                return@withContext ApiResponse(false, error = "No auth token")
+            }
             
             val url = URL("$baseUrl$endpoint")
+            Log.d("StudentApiService", "🌐 Making request to: $url")
+            
             val connection = url.openConnection() as HttpURLConnection
             
             connection.requestMethod = method
@@ -47,6 +54,8 @@ class StudentApiService @Inject constructor(
             connection.readTimeout = 10000
             
             val responseCode = connection.responseCode
+            Log.d("StudentApiService", "📊 Response code: $responseCode")
+            
             val inputStream = if (responseCode == HttpURLConnection.HTTP_OK) {
                 connection.inputStream
             } else {
@@ -57,43 +66,55 @@ class StudentApiService @Inject constructor(
             val response = reader.readText()
             reader.close()
             
+            Log.d("StudentApiService", "📄 Response body: $response")
+            
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 ApiResponse(true, JSONObject(response))
             } else {
                 val errorObj = JSONObject(response)
-                ApiResponse(false, error = errorObj.optString("error", "Unknown error"))
+                val errorMessage = errorObj.optString("error", "Unknown error")
+                Log.e("StudentApiService", "❌ API error: $errorMessage")
+                ApiResponse(false, error = errorMessage)
             }
             
         } catch (e: Exception) {
-            Log.e("StudentApiService", "API request failed", e)
+            Log.e("StudentApiService", "❌ API request failed", e)
             ApiResponse(false, error = e.message ?: "Network error")
         }
     }
     
     suspend fun getPermittedDays(): ApiResponse<List<PermittedDay>> {
+        Log.d("StudentApiService", "🔍 Starting getPermittedDays request")
         val response = makeRequest("/students/permitted-days")
+        
+        Log.d("StudentApiService", "📊 getPermittedDays response - success: ${response.success}, error: ${response.error}")
+        
         return if (response.success && response.data != null) {
             try {
                 val permittedDaysArray = response.data.getJSONArray("permittedDays")
+                Log.d("StudentApiService", "📋 Found ${permittedDaysArray.length()} permitted days")
+                
                 val permittedDays = mutableListOf<PermittedDay>()
                 
                 for (i in 0 until permittedDaysArray.length()) {
                     val dayObj = permittedDaysArray.getJSONObject(i)
-                    permittedDays.add(
-                        PermittedDay(
-                            dayId = dayObj.getString("dayId"),
-                            title = dayObj.getString("title"),
-                            videoCount = dayObj.getInt("videoCount")
-                        )
+                    val permittedDay = PermittedDay(
+                        dayId = dayObj.getString("dayId"),
+                        title = dayObj.getString("title"),
+                        videoCount = dayObj.getInt("videoCount")
                     )
+                    permittedDays.add(permittedDay)
+                    Log.d("StudentApiService", "✅ Added permitted day: ${permittedDay.dayId}")
                 }
                 
+                Log.d("StudentApiService", "🎉 Successfully parsed ${permittedDays.size} permitted days")
                 ApiResponse(true, permittedDays)
             } catch (e: Exception) {
-                Log.e("StudentApiService", "Error parsing permitted days", e)
+                Log.e("StudentApiService", "❌ Error parsing permitted days", e)
                 ApiResponse(false, error = "Failed to parse response")
             }
         } else {
+            Log.e("StudentApiService", "❌ getPermittedDays failed: ${response.error}")
             ApiResponse(false, error = response.error)
         }
     }
