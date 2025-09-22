@@ -51,6 +51,15 @@
     <string name="thumbnail">Thumbnail</string>
     <string name="upload_success">Video uploaded successfully</string>
     <string name="upload_failed">Upload failed</string>
+    <string name="video_orientation">Video Orientation</string>
+    <string name="orientation_landscape">Landscape</string>
+    <string name="orientation_portrait">Portrait</string>
+    <string name="explore">Explore</string>
+    <string name="comments">Comments</string>
+    <string name="add_comment">Add a comment…</string>
+    <string name="deepen_thoughts_ai">Deepen your thoughts with AI</string>
+    <string name="related_videos">Related Videos</string>
+    <string name="no_comments">No comments yet</string>
     
     <!-- Profile Setup -->
     <string name="profile_setup_title">Complete Your Profile</string>

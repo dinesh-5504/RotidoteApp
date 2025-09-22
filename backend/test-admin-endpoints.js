@@ -6,8 +6,8 @@ const http = require('http');
 
 const BASE_URL = 'https://rotidoteapp.onrender.com';
 // For testing, you'll need a valid Firebase ID token for admin user
-const ADMIN_TOKEN = 'your-firebase-admin-token-here'; // Replace with actual token
-
+//const ADMIN_TOKEN = 'your-firebase-admin-token-here'; // Replace with actual token
+const ADMIN_TOKEN = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjUwMDZlMjc5MTVhMTcwYWIyNmIxZWUzYjgxZDExNjU0MmYxMjRmMjAiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcm90aWRvdGUtZGF0YWJhc2UiLCJhdWQiOiJyb3RpZG90ZS1kYXRhYmFzZSIsImF1dGhfdGltZSI6MTc1ODM5NTA0NywidXNlcl9pZCI6IkpTV0N0UTZTakhSNG05OVhETHdXcTJNU3VXZTIiLCJzdWIiOiJKU1dDdFE2U2pIUjRtOTlYREx3V3EyTVN1V2UyIiwiaWF0IjoxNzU4Mzk2ODI3LCJleHAiOjE3NTg0MDA0MjcsImVtYWlsIjoiZGluZXNoa2FydGhpa2V5YW4uYWRtaW5AZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImRpbmVzaGthcnRoaWtleWFuLmFkbWluQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.o63Jnf1r47Z03uec4PZGpMtq4mr-Ue3jyNlv2wEoTQ8TjoUaSJBqbZ0Ur8yNlyIqoDKyyb0X3zKRQPSN3g1NirAEJyWWr5wLDVbrzz7FWt6IX9-xNKVdfVyEQKZvicrizd-Ann_ZZ9xEnAWM_sjmrA3M82SY_8SqsLOclHAz7Chj90Io-DwoHgJQ5kQHFGoRQEM1o9Nwyd5z7rRuhVFF5Ge0XlXtXl5en1CQ6xb0IXoe37WTtAfNbW-5Opz5WQlC0MBNR9Uzsaag3bnVOZGsn3-JzkIzN2HPXlqfCg2jpEyeJY9O65rzBK0I1yFFyEQkilTIzXt3kM21gvskYLK3KA';
 // Test utility function
 async function testEndpoint(endpoint, method = 'GET', body = null, expectedStatus = 200) {
   return new Promise((resolve, reject) => {

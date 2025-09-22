@@ -4,12 +4,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import com.rotidote.app.R
 
 @Composable
@@ -62,12 +66,29 @@ fun ErrorMessage(
 fun RotidoteLogo(
     modifier: Modifier = Modifier
 ) {
-    Text(
-        text = stringResource(R.string.app_name),
-        style = MaterialTheme.typography.headlineMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier
+    val text = stringResource(R.string.app_name)
+    val rotiPart = text.substring(0, 4) // "Roti"
+    val dotePart = text.substring(4) // "dote"
+    val ComicNeue = FontFamily(
+        Font(R.font.comic_neue_regular)
     )
+    Row(modifier = modifier) {
+        Text(
+            text = rotiPart,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                //fontFamily = androidx.compose.ui.text.font.FontFamily.Custom("Comic Neue")
+                fontFamily = ComicNeue
+            ),
+            color = Color(0xFFD04040), // #d04040
+        )
+        Text(
+            text = dotePart,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontFamily = ComicNeue
+            ),
+            color = Color(0xFF31CC11), // #31cc11
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,9 +101,20 @@ fun FilterChip(
 ) {
     androidx.compose.material3.FilterChip(
         onClick = onClick,
-        label = { Text(text = text) },
+        label = { 
+            Text(
+                text = text,
+                color = if (selected) Color.Black else Color.White
+            ) 
+        },
         selected = selected,
-        modifier = modifier
+        modifier = modifier,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = if (selected) Color.White else Color.Gray.copy(alpha = 0.3f),
+            selectedContainerColor = Color.White,
+            labelColor = if (selected) Color.Black else Color.White,
+            selectedLabelColor = Color.Black
+        )
     )
 }
 

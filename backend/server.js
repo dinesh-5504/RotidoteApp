@@ -7,6 +7,8 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const studentRoutes = require('./routes/students');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +38,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Mount routes
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
+app.use('/students', studentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Base route
 app.get('/', (req, res) => {
@@ -54,6 +58,14 @@ app.get('/', (req, res) => {
         sessions: 'GET /admin/sessions',
         upload: 'POST /admin/upload',
         analytics: 'GET /admin/analytics'
+      },
+      students: {
+        permittedDays: 'GET /students/permitted-days',
+        videos: 'GET /students/videos/:dayId'
+      },
+      upload: {
+        mux: 'POST /api/upload/mux',
+        cloudinary: 'POST /api/upload/cloudinary'
       }
     }
   });

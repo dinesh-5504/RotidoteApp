@@ -38,15 +38,30 @@ class MuxService @Inject constructor(
                     contentType = "video/mp4"
                 ).getOrThrow()
 
-                // Upload video directly to Mux using the upload URL
-                val videoFile = File(videoUri.path!!)
-                val requestBody = videoFile.asRequestBody("video/mp4".toMediaType())
-                val multipartBody = MultipartBody.Part.createFormData("file", videoFile.name, requestBody)
+                // Read video file from URI
+                val inputStream = context.contentResolver.openInputStream(videoUri)
+                    ?: throw Exception("Failed to open video file")
+                
+                val videoBytes = inputStream.readBytes()
+                inputStream.close()
+
+                // Create multipart body for Mux upload
+                val multipartBody = okhttp3.MultipartBody.Builder()
+                    .setType(okhttp3.MultipartBody.FORM)
+                    .addFormDataPart(
+                        "file",
+                        "video_${System.currentTimeMillis()}.mp4",
+                        okhttp3.RequestBody.create(
+                            "video/mp4".toMediaType(),
+                            videoBytes
+                        )
+                    )
+                    .build()
 
                 // Create request to upload to Mux
                 val request = okhttp3.Request.Builder()
                     .url(uploadResponse.uploadUrl)
-                    .post(requestBody)
+                    .post(multipartBody)
                     .build()
 
                 // Execute upload
@@ -54,11 +69,46 @@ class MuxService @Inject constructor(
                 
                 if (response.isSuccessful) {
                     // Wait a bit for Mux to process the video
-                    kotlinx.coroutines.delay(2000)
+                    // kotlinx.coroutines.delay(2000)
                     
                     // Get asset details
-                    val assetDetails = backendApiService.getAssetDetails(uploadResponse.assetId)
-                    
+                    // val assetDetails = backendApiService.getAssetDetails(uploadResponse.assetId)
+                    // Poll for asset status until it's ready
+                    var assetDetails: AssetDetailsResponse? = null
+                    var attempts = 0
+                    val maxAttempts = 15 // ~75 seconds max wait
+                    while (attempts < maxAttempts) {
+                        try {
+                            assetDetails = backendApiService.getAssetDetails(uploadResponse.assetId)
+
+                            when (assetDetails.status) {
+                                "ready" -> break
+                                "errored" -> throw Exception("Mux processing failed for asset ${uploadResponse.assetId}")
+                                "preparing" -> {
+                                    // Continue polling
+                                    attempts++
+                                    kotlinx.coroutines.delay(5000) // wait 5s before retry
+                                }
+                                else -> {
+                                    // Unknown status, continue polling
+                                    attempts++
+                                    kotlinx.coroutines.delay(5000)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // If we can't get asset details, continue polling unless we've exhausted attempts
+                            attempts++
+                            if (attempts >= maxAttempts) {
+                                throw Exception("Failed to get asset details after $maxAttempts attempts: ${e.message}")
+                            }
+                            kotlinx.coroutines.delay(5000)
+                        }
+                    }
+
+                    if (assetDetails == null || assetDetails.status != "ready") {
+                        throw Exception("Mux processing timeout for asset ${uploadResponse.assetId} after $maxAttempts attempts")
+                    }
+
                     val result = MuxUploadResult(
                         assetId = uploadResponse.assetId,
                         playbackId = assetDetails.playbackId,
@@ -67,7 +117,8 @@ class MuxService @Inject constructor(
                     )
                     Result.success(result)
                 } else {
-                    Result.failure(Exception("Upload failed: ${response.code}"))
+                    val errorBody = response.body?.string() ?: "Unknown error"
+                    Result.failure(Exception("Upload failed: ${response.code} - $errorBody"))
                 }
             }
         } catch (e: Exception) {
@@ -117,17 +168,17 @@ class MuxService @Inject constructor(
         return try {
             val assetDetails = backendApiService.getAssetDetails(assetId)
             val metadata = VideoMetadata(
-                duration = ((assetDetails.duration ?: 0.0) * 1000).toLong(), // Convert to milliseconds
+                duration = (assetDetails.duration * 1000).toLong(), // Convert to milliseconds
                 width = 1920, // Default values since Mux doesn't provide these in basic response
                 height = 1080,
-                aspectRatio = assetDetails.aspectRatio ?: "16:9"
+                aspectRatio = assetDetails.aspectRatio
             )
             Result.success(metadata)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-
+ 
     suspend fun healthCheck(): Result<Boolean> {
         return try {
             val response = backendApiService.healthCheck()

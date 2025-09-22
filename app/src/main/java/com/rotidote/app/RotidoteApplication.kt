@@ -8,6 +8,5 @@ class RotidoteApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
-        // Cloudinary is now handled by the backend
     }
 } 

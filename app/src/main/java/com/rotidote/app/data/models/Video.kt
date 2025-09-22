@@ -5,19 +5,24 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Video(
-    val id: String = "",
+    val videoId: String = "", // Generated ID for the document
     val title: String = "",
     val creatorName: String = "",
-    val creatorId: String = "",
-    val duration: Long = 0L,
-    val adVideoMuxKey: String = "",
-    val mainVideoMuxKey: String = "",
-    val adVideoPlaybackUrl: String = "",
-    val mainVideoPlaybackUrl: String = "",
-    val thumbnailUrl: String = "",
-    val likes: Int = 0,
-    val dislikes: Int = 0,
-    val comments: Int = 0,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val duration: String = "", // Format: "05:32"
+    val mainGenre: String = "",
+    val mainVideo: MainVideo = MainVideo(),
+    val adGenre: String = "",
+    val adVideo: AdVideo = AdVideo(),
+    val orientation: String = "landscape" // "portrait" or "landscape"
+) : Parcelable
+
+@Parcelize
+data class MainVideo(
+    val playbackId: String = "",
+    val thumbnailUrl: String = "" // Cloudinary URL
+) : Parcelable
+
+@Parcelize
+data class AdVideo(
+    val playbackId: String = ""
 ) : Parcelable 

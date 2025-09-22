@@ -1,19 +1,18 @@
 package com.rotidote.app.ui.screens.upload
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.VideoFile
 import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -30,7 +29,6 @@ fun UploadScreen(
     viewModel: UploadViewModel = hiltViewModel()
 ) {
     val isUploading by viewModel.isUploading.collectAsState()
-    val uploadProgress by viewModel.uploadProgress.collectAsState()
     val uploadSuccess by viewModel.uploadSuccess.collectAsState()
     val error by viewModel.error.collectAsState()
     
@@ -45,30 +43,41 @@ fun UploadScreen(
         return
     }
     
+
     Scaffold(
+        modifier = Modifier.background(Color.Black),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.upload_video)) },
+                modifier = Modifier.background(Color.Black),
+                title = { Text(stringResource(R.string.upload_video), color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Default.ArrowBack, 
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Black,
+                    titleContentColor = Color.White
+                )
             )
         }
     ) { paddingValues ->
-        val context = LocalContext.current
-
         UploadContent(
-            onUpload = { creatorName, videoTitle, duration, adVideoUri, mainVideoUri, thumbnailUri ->
+            onUpload = { creatorName, videoTitle, duration, mainGenre, mainVideoPlaybackId, adGenre, adVideoPlaybackId, thumbnailUrl, orientation ->
                 viewModel.uploadVideo(
-                    context = context,
                     creatorName = creatorName,
                     videoTitle = videoTitle,
                     duration = duration,
-                    adVideoUri = adVideoUri,
-                    mainVideoUri = mainVideoUri,
-                    thumbnailUri = thumbnailUri
+                    mainGenre = mainGenre,
+                    mainVideoPlaybackId = mainVideoPlaybackId,
+                    adGenre = adGenre,
+                    adVideoPlaybackId = adVideoPlaybackId,
+                    thumbnailUrl = thumbnailUrl,
+                    orientation = orientation
                 )
             },
             errorMessage = error,
@@ -80,231 +89,272 @@ fun UploadScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UploadContent(
-    onUpload: (String, String, Long, Uri, Uri, Uri) -> Unit,
+    onUpload: (String, String, String, String, String, String, String, String, String) -> Unit,
     errorMessage: String?,
     modifier: Modifier = Modifier
 ) {
     var creatorName by remember { mutableStateOf("") }
     var videoTitle by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("") }
-    var adVideoUri by remember { mutableStateOf<Uri?>(null) }
-    var mainVideoUri by remember { mutableStateOf<Uri?>(null) }
-    var thumbnailUri by remember { mutableStateOf<Uri?>(null) }
-    
-    val context = LocalContext.current
-    
-    // File picker launchers
-    val adVideoPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        adVideoUri = uri
-    }
-    
-    val mainVideoPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        mainVideoUri = uri
-    }
-    
-    val thumbnailPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        thumbnailUri = uri
-    }
-    
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = stringResource(R.string.upload_video),
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
+    var mainGenre by remember { mutableStateOf("") }
+    var mainVideoPlaybackId by remember { mutableStateOf("") }
+    var adGenre by remember { mutableStateOf("") }
+    var adVideoPlaybackId by remember { mutableStateOf("") }
+    var thumbnailUrl by remember { mutableStateOf("") }
+    var orientation by remember { mutableStateOf("landscape") }
+    val scrollState = rememberScrollState()
+
+         Column(
+         modifier = modifier
+             .fillMaxSize()
+             .background(Color.Black)
+             .padding(24.dp)
+             .verticalScroll(scrollState), // 👈 make it scrollable
+         horizontalAlignment = Alignment.CenterHorizontally,
+         //verticalArrangement = Arrangement.SpaceBetween
+     ) {
+         Column(
+             horizontalAlignment = Alignment.CenterHorizontally
+         ) {
+
         
         OutlinedTextField(
             value = creatorName,
             onValueChange = { creatorName = it },
-            label = { Text(stringResource(R.string.name)) },
+            label = { Text("Creator Name", color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
         )
         
         OutlinedTextField(
             value = videoTitle,
             onValueChange = { videoTitle = it },
-            label = { Text(stringResource(R.string.video_title)) },
+            label = { Text("Video Title", color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
         )
         
         OutlinedTextField(
             value = duration,
             onValueChange = { duration = it },
-            label = { Text(stringResource(R.string.video_duration)) },
+            label = { Text("Duration (mm:ss)", color = Color.White) },
+            placeholder = { Text("05:32", color = Color.Gray) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
         )
         
-        // Ad Video Selection
-        Card(
+        // Orientation selection
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (adVideoUri != null) 
-                    MaterialTheme.colorScheme.primaryContainer 
-                else 
-                    MaterialTheme.colorScheme.surfaceVariant
-            )
+                .padding(bottom = 16.dp)
         ) {
+                                 Text(
+                         text = stringResource(R.string.video_orientation),
+                         style = MaterialTheme.typography.bodyMedium,
+                         color = Color.White,
+                         modifier = Modifier.padding(bottom = 8.dp)
+                     )
+            
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.VideoFile,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.ad_video),
-                        style = MaterialTheme.typography.titleMedium
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    RadioButton(
+                        selected = orientation == "landscape",
+                        onClick = { orientation = "landscape" }
                     )
-                    Text(
-                        text = if (adVideoUri != null) "Video selected" else "Select ad video",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                                         Text(
+                         text = stringResource(R.string.orientation_landscape),
+                         style = MaterialTheme.typography.bodyMedium,
+                         color = Color.White,
+                         modifier = Modifier.padding(start = 8.dp)
+                     )
                 }
-                IconButton(onClick = { adVideoPicker.launch("video/*") }) {
-                    Icon(Icons.Default.Add, contentDescription = "Select ad video")
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    RadioButton(
+                        selected = orientation == "portrait",
+                        onClick = { orientation = "portrait" }
+                    )
+                                         Text(
+                         text = stringResource(R.string.orientation_portrait),
+                         style = MaterialTheme.typography.bodyMedium,
+                         color = Color.White,
+                         modifier = Modifier.padding(start = 8.dp)
+                     )
                 }
             }
         }
         
-        // Main Video Selection
-        Card(
+        OutlinedTextField(
+            value = mainGenre,
+            onValueChange = { mainGenre = it },
+            label = { Text("Main Video Genre", color = Color.White) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (mainVideoUri != null) 
-                    MaterialTheme.colorScheme.primaryContainer 
-                else 
-                    MaterialTheme.colorScheme.surfaceVariant
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
             )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.VideoFile,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.main_video),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = if (mainVideoUri != null) "Video selected" else "Select main video",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = { mainVideoPicker.launch("video/*") }) {
-                    Icon(Icons.Default.Add, contentDescription = "Select main video")
-                }
-            }
-        }
+        )
         
-        // Thumbnail Selection
-        Card(
+        OutlinedTextField(
+            value = mainVideoPlaybackId,
+            onValueChange = { mainVideoPlaybackId = it },
+            label = { Text("Main Video Playback ID", color = Color.White) },
+            placeholder = { Text("main12345", color = Color.Gray) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
+        )
+        
+        OutlinedTextField(
+            value = adGenre,
+            onValueChange = { adGenre = it },
+            label = { Text("Ad Video Genre", color = Color.White) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
+        )
+        
+        OutlinedTextField(
+            value = adVideoPlaybackId,
+            onValueChange = { adVideoPlaybackId = it },
+            label = { Text("Ad Video Playback ID", color = Color.White) },
+            placeholder = { Text("ad67890", color = Color.Gray) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
+            )
+        )
+        
+        OutlinedTextField(
+            value = thumbnailUrl,
+            onValueChange = { thumbnailUrl = it },
+            label = { Text("Thumbnail URL (Cloudinary)", color = Color.White) },
+            placeholder = { Text("https://cloudinary.com/...thumb.jpg", color = Color.Gray) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (thumbnailUri != null) 
-                    MaterialTheme.colorScheme.primaryContainer 
-                else 
-                    MaterialTheme.colorScheme.surfaceVariant
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.White,
+                unfocusedBorderColor = Color.Gray,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.Gray
             )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Image,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.thumbnail),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = if (thumbnailUri != null) "Image selected" else "Select thumbnail image",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                IconButton(onClick = { thumbnailPicker.launch("image/*") }) {
-                    Icon(Icons.Default.Add, contentDescription = "Select thumbnail")
-                }
-            }
-        }
+        )
         
-        if (errorMessage != null) {
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-        }
-        
-        Button(
-            onClick = {
-                val durationMs = duration.toLongOrNull() ?: 0L
-                if (adVideoUri != null && mainVideoUri != null && thumbnailUri != null) {
-                    onUpload(creatorName, videoTitle, durationMs, adVideoUri!!, mainVideoUri!!, thumbnailUri!!)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            enabled = creatorName.isNotEmpty() && 
-                     videoTitle.isNotEmpty() && 
-                     duration.isNotEmpty() && 
-                     adVideoUri != null && 
-                     mainVideoUri != null && 
-                     thumbnailUri != null
-        ) {
-            Text(stringResource(R.string.upload_video))
-        }
+                          if (errorMessage != null) {
+             Text(
+                 text = errorMessage,
+                 color = Color.Red,
+                 textAlign = TextAlign.Center,
+                 modifier = Modifier.padding(bottom = 16.dp)
+             )
+         }
+         }
+         
+         // Upload button at the bottom
+         Button(
+             onClick = {
+                 onUpload(creatorName, videoTitle, duration, mainGenre, mainVideoPlaybackId, adGenre, adVideoPlaybackId, thumbnailUrl, orientation)
+             },
+             modifier = Modifier
+                 .fillMaxWidth()
+                 .height(56.dp),
+             enabled = creatorName.isNotEmpty() && 
+                      videoTitle.isNotEmpty() && 
+                      duration.isNotEmpty() && 
+                      mainGenre.isNotEmpty() && 
+                      mainVideoPlaybackId.isNotEmpty() && 
+                      adGenre.isNotEmpty() && 
+                      adVideoPlaybackId.isNotEmpty() && 
+                      thumbnailUrl.isNotEmpty() &&
+                      orientation.isNotEmpty(),
+             colors = ButtonDefaults.buttonColors(
+                 containerColor = Color.White,
+                 contentColor = Color.Black
+             ),
+             shape = RoundedCornerShape(12.dp)
+         ) {
+             Text(
+                 text = "Upload Video",
+                 style = MaterialTheme.typography.titleMedium,
+                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+             )
+         }
     }
 } 

@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,11 +39,13 @@ class HomeViewModel @Inject constructor(
             _error.value = null
             
             try {
-                val videoList = firestoreService.getVideos(50)
-                _videos.value = videoList
+                // Use Firestore snapshot listener for real-time updates
+                firestoreService.getVideosStream().collectLatest { videoList ->
+                    _videos.value = videoList
+                    _isLoading.value = false
+                }
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load videos"
-            } finally {
                 _isLoading.value = false
             }
         }

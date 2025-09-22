@@ -17,15 +17,19 @@ import com.rotidote.app.ui.viewmodels.AuthViewModel
 @Composable
 fun ProfileSetupScreen(
     onNavigateToHome: () -> Unit,
+    onNavigateToAdminDashboard: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by viewModel.authState.collectAsState()
     
     LaunchedEffect(authState) {
-        when (authState) {
+        when (val state = authState) {
             is com.rotidote.app.data.models.AuthState.Authenticated -> {
-                // Navigate to home and clear the entire back stack
-                onNavigateToHome()
+                // Navigate based on user type and clear the entire back stack
+                when (state.userType) {
+                    com.rotidote.app.data.models.UserType.ADMIN -> onNavigateToAdminDashboard()
+                    com.rotidote.app.data.models.UserType.STUDENT -> onNavigateToHome()
+                }
             }
             else -> {}
         }

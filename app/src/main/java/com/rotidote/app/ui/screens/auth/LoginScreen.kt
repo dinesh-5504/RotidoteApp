@@ -18,15 +18,20 @@ import com.rotidote.app.ui.viewmodels.AuthViewModel
 @Composable
 fun LoginScreen(
     onNavigateToSignup: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToAdminDashboard: () -> Unit,
     onNavigateToProfile: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val authState by viewModel.authState.collectAsState()
     
     LaunchedEffect(authState) {
-        when (authState) {
+        when (val state = authState) {
             is com.rotidote.app.data.models.AuthState.Authenticated -> {
-                onNavigateToProfile()
+                when (state.userType) {
+                    com.rotidote.app.data.models.UserType.ADMIN -> onNavigateToAdminDashboard()
+                    com.rotidote.app.data.models.UserType.STUDENT -> onNavigateToHome()
+                }
             }
             is com.rotidote.app.data.models.AuthState.ProfileIncomplete -> {
                 onNavigateToProfile()
