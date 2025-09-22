@@ -37,7 +37,7 @@ class MuxService {
    */
   async createDirectUpload(title) {
     try {
-      const upload = await this.clientvideo.uploads.create({
+      const upload = await this.client.video.uploads.create({
         new_asset_settings: {
           playback_policy: 'public',
           test: process.env.NODE_ENV !== 'production',
