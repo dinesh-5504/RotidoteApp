@@ -3,10 +3,10 @@ const {Video} = require('@mux/mux-node');
 class MuxService {
   constructor() {
     // Initialize Mux with API keys from environment variables
-    this.video = new Video({
-      tokenId: process.env.MUX_TOKEN_ID,
-      tokenSecret: process.env.MUX_TOKEN_SECRET,
-    });
+    this.video = new Video(
+      process.env.MUX_TOKEN_ID,
+      process.env.MUX_TOKEN_SECRET,
+    );
   }
 
   /**
