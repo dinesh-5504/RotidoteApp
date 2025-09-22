@@ -1,5 +1,5 @@
-const express = require('express');
-const authController = require('../controllers/authController');
+import express from 'express';
+import authController from '../controllers/authController.js';
 
 const router = express.Router();
 
@@ -18,4 +18,4 @@ router.post('/login', authController.login);
 // Fetches Firestore user document and returns user profile
 router.get('/profile', authController.getProfile);
 
-module.exports = router;
+export default router;

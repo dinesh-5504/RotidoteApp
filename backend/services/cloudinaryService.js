@@ -1,4 +1,4 @@
-const cloudinary = require('cloudinary').v2;
+import { v2 as cloudinary } from 'cloudinary';
 
 class CloudinaryService {
   constructor() {
@@ -114,4 +114,4 @@ class CloudinaryService {
   }
 }
 
-module.exports = new CloudinaryService();
+export default new CloudinaryService();

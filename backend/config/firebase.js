@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
@@ -21,4 +21,4 @@ if (!admin.apps.length) {
 const auth = admin.auth();
 const firestore = admin.firestore();
 
-module.exports = { auth, firestore, admin };
+export { auth, firestore, admin };

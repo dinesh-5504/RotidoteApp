@@ -1,6 +1,6 @@
-const express = require('express');
-const muxService = require('../services/muxService');
-const cloudinaryService = require('../services/cloudinaryService');
+import express from 'express';
+import muxService from '../services/muxService.js';
+import cloudinaryService from '../services/cloudinaryService.js';
 const router = express.Router();
 
 // Mux Direct Upload API
@@ -56,4 +56,4 @@ router.post('/cloudinary', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

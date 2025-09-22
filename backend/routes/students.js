@@ -1,5 +1,5 @@
-const express = require('express');
-const admin = require('firebase-admin');
+import express from 'express';
+import admin from 'firebase-admin';
 const router = express.Router();
 
 // Middleware to verify student authentication
@@ -101,4 +101,4 @@ router.get('/videos/:dayId', verifyStudent, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
