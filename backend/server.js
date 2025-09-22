@@ -1,15 +1,14 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-dotenv.config();
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import adminRoutes from './routes/admin.js';
-import studentRoutes from './routes/students.js';
-import uploadRoutes from './routes/upload.js';
+const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
+const studentRoutes = require('./routes/students');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -109,7 +108,7 @@ if (missingVars.length > 0) {
 
 //const PORT = process.env.PORT || 3000;
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 Rotidote Backend server running on port ${PORT}`);
     console.log(`📡 Health check: http://localhost:${PORT}/health`);
@@ -117,4 +116,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export default app;
+module.exports = app;

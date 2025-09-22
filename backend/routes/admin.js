@@ -1,8 +1,8 @@
-import express from 'express';
-import admin from 'firebase-admin';
-import multer from 'multer';
-import muxService from '../services/muxService.js';
-import cloudinaryService from '../services/cloudinaryService.js';
+const express = require('express');
+const admin = require('firebase-admin');
+const multer = require('multer');
+const muxService = require('../services/muxService');
+const cloudinaryService = require('../services/cloudinaryService');
 
 // Configure multer for file uploads
 const upload = multer({
@@ -407,5 +407,5 @@ router.get('/analytics', verifyAdmin, async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
 

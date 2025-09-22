@@ -1,4 +1,4 @@
-import { auth, firestore } from '../config/firebase.js';
+const { auth, firestore } = require('../config/firebase');
 
 // POST /auth/signup
 // Creates a new user in Firebase Auth with email + password
@@ -226,7 +226,7 @@ const getProfile = async (req, res) => {
   }
 };
 
-export default {
+module.exports = {
   signup,
   login,
   getProfile

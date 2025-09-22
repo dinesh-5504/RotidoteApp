@@ -1,4 +1,4 @@
-import Mux from '@mux/mux-node';
+const Mux = require('@mux/mux-node');
 
 class MuxService {
   constructor() {
@@ -6,7 +6,7 @@ class MuxService {
     this.client = new Mux({
       tokenId: process.env.MUX_TOKEN_ID,
       tokenSecret: process.env.MUX_TOKEN_SECRET,
-    });
+  });
   }
 
   /**
@@ -37,7 +37,7 @@ class MuxService {
    */
   async createDirectUpload(title) {
     try {
-      const upload = await this.client.video.uploads.create({
+      const upload = await this.clientvideo.uploads.create({
         new_asset_settings: {
           playback_policy: 'public',
           test: process.env.NODE_ENV !== 'production',
@@ -90,4 +90,4 @@ class MuxService {
   }
 }
 
-export default new MuxService();
+module.exports = new MuxService();
