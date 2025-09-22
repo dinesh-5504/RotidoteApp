@@ -1,9 +1,9 @@
-const Mux = require('@mux/mux-node');
+const {Video} = require('@mux/mux-node');
 
 class MuxService {
   constructor() {
     // Initialize Mux with API keys from environment variables
-    this.mux = new Mux.Video({
+    this.video = new Video({
       tokenId: process.env.MUX_TOKEN_ID,
       tokenSecret: process.env.MUX_TOKEN_SECRET,
     });
@@ -14,7 +14,7 @@ class MuxService {
    */
   async createAsset(title, inputUrl = null) {
     try {
-      const asset = await this.mux.Assets.create({
+      const asset = await this.video.Assets.create({
         input: inputUrl || [{ url: 'https://storage.googleapis.com/muxdemofiles/mux-video-intro.mp4' }],
         playback_policy: 'public',
         test: process.env.NODE_ENV !== 'production', // Use test mode in development
@@ -37,7 +37,7 @@ class MuxService {
    */
   async createDirectUpload(title) {
     try {
-      const upload = await this.mux.Uploads.create({
+      const upload = await this.video.Uploads.create({
         new_asset_settings: {
           playback_policy: 'public',
           test: process.env.NODE_ENV !== 'production',
@@ -61,7 +61,7 @@ class MuxService {
    */
   async getAsset(assetId) {
     try {
-      const asset = await this.mux.Assets.retrieve(assetId);
+      const asset = await this.video.Assets.retrieve(assetId);
       return {
         assetId: asset.id,
         playbackId: asset.playback_ids[0]?.id,
@@ -81,7 +81,7 @@ class MuxService {
    */
   async deleteAsset(assetId) {
     try {
-      await this.mux.Assets.del(assetId);
+      await this.video.Assets.del(assetId);
       return true;
     } catch (error) {
       console.error('Error deleting Mux asset:', error);
