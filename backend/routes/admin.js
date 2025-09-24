@@ -100,21 +100,42 @@ router.get('/students', verifyAdmin, async (req, res) => {
   }
 });
 
-// Get all sessions
+// Get all day sessions (with multiple sessions per day)
 router.get('/sessions', verifyAdmin, async (req, res) => {
   try {
     const db = admin.firestore();
     const snapshot = await db.collection('sessions').orderBy('dayId').get();
     
-    const sessions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const daySessions = [];
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      daySessions.push({
+        dayId: doc.id,
+        dayTitle: data.dayTitle || `Day ${doc.id.replace('Day', '')}`,
+        enabled: data.enabled || false,
+        sessions: data.sessions || [],
+        createdAt: data.createdAt?.toMillis() || Date.now()
+      });
+    });
+    
+    // Ensure we have all 5 days
+    for (let i = 1; i <= 5; i++) {
+      const dayId = `Day${i}`;
+      if (!daySessions.find(d => d.dayId === dayId)) {
+        daySessions.push({
+          dayId,
+          dayTitle: `Day ${i}`,
+          enabled: false,
+          sessions: [],
+          createdAt: Date.now()
+        });
+      }
+    }
 
-    res.json({ sessions });
+    res.json({ daySessions });
   } catch (error) {
-    console.error('Error fetching sessions:', error);
-    res.status(500).json({ error: 'Failed to fetch sessions' });
+    console.error('Error fetching day sessions:', error);
+    res.status(500).json({ error: 'Failed to fetch day sessions' });
   }
 });
 
@@ -146,7 +167,7 @@ router.post('/sessions/:dayId', verifyAdmin, async (req, res) => {
   }
 });
 
-// Toggle session enabled status
+// Toggle day session enabled status
 router.patch('/sessions/:dayId/toggle', verifyAdmin, async (req, res) => {
   try {
     const { dayId } = req.params;
@@ -158,13 +179,104 @@ router.patch('/sessions/:dayId/toggle', verifyAdmin, async (req, res) => {
     });
 
     res.json({
-      message: 'Session status updated successfully',
+      message: 'Day session status updated successfully',
       dayId,
       enabled
     });
   } catch (error) {
-    console.error('Error toggling session:', error);
-    res.status(500).json({ error: 'Failed to toggle session' });
+    console.error('Error toggling day session:', error);
+    res.status(500).json({ error: 'Failed to toggle day session' });
+  }
+});
+
+// Create a new session within a day
+router.post('/sessions/:dayId/sessions', verifyAdmin, async (req, res) => {
+  try {
+    const { dayId } = req.params;
+    const { title, enabled, videos, permittedStudents } = req.body;
+    
+    const db = admin.firestore();
+    const sessionRef = db.collection('sessions').doc(dayId);
+    
+    // Get current day session data
+    const daySessionDoc = await sessionRef.get();
+    const currentData = daySessionDoc.exists ? daySessionDoc.data() : { sessions: [] };
+    const currentSessions = currentData.sessions || [];
+    
+    // Create new session
+    const newSession = {
+      sessionId: `${dayId}_Session${currentSessions.length + 1}`,
+      dayId,
+      sessionNumber: currentSessions.length + 1,
+      title: title || `Session ${currentSessions.length + 1}`,
+      enabled: enabled || false,
+      videos: videos || [],
+      permittedStudents: permittedStudents || [],
+      createdAt: Date.now()
+    };
+    
+    // Add new session to the day
+    currentSessions.push(newSession);
+    
+    await sessionRef.set({
+      ...currentData,
+      sessions: currentSessions
+    }, { merge: true });
+    
+    res.json({
+      message: 'Session created successfully',
+      session: newSession
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({ error: 'Failed to create session' });
+  }
+});
+
+// Update a specific session within a day
+router.put('/sessions/:dayId/sessions/:sessionId', verifyAdmin, async (req, res) => {
+  try {
+    const { dayId, sessionId } = req.params;
+    const { title, enabled, videos, permittedStudents } = req.body;
+    
+    const db = admin.firestore();
+    const sessionRef = db.collection('sessions').doc(dayId);
+    
+    // Get current day session data
+    const daySessionDoc = await sessionRef.get();
+    if (!daySessionDoc.exists) {
+      return res.status(404).json({ error: 'Day session not found' });
+    }
+    
+    const currentData = daySessionDoc.data();
+    const currentSessions = currentData.sessions || [];
+    
+    // Find and update the specific session
+    const sessionIndex = currentSessions.findIndex(s => s.sessionId === sessionId);
+    if (sessionIndex === -1) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    currentSessions[sessionIndex] = {
+      ...currentSessions[sessionIndex],
+      title: title || currentSessions[sessionIndex].title,
+      enabled: enabled !== undefined ? enabled : currentSessions[sessionIndex].enabled,
+      videos: videos || currentSessions[sessionIndex].videos,
+      permittedStudents: permittedStudents || currentSessions[sessionIndex].permittedStudents
+    };
+    
+    await sessionRef.set({
+      ...currentData,
+      sessions: currentSessions
+    }, { merge: true });
+    
+    res.json({
+      message: 'Session updated successfully',
+      session: currentSessions[sessionIndex]
+    });
+  } catch (error) {
+    console.error('Error updating session:', error);
+    res.status(500).json({ error: 'Failed to update session' });
   }
 });
 
