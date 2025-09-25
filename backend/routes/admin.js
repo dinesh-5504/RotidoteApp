@@ -100,46 +100,77 @@ router.get('/students', verifyAdmin, async (req, res) => {
   }
 });
 
-// Get all day sessions (with multiple sessions per day)
+// Get all sessions (with nested days)
 router.get('/sessions', verifyAdmin, async (req, res) => {
   try {
     const db = admin.firestore();
-    const snapshot = await db.collection('sessions').orderBy('dayId').get();
+    const snapshot = await db.collection('sessions').get();
     
-    const daySessions = [];
+    const sessions = [];
     snapshot.docs.forEach(doc => {
       const data = doc.data();
-      daySessions.push({
-        dayId: doc.id,
-        dayTitle: data.dayTitle || `Day ${doc.id.replace('Day', '')}`,
-        enabled: data.enabled || false,
-        sessions: data.sessions || [],
-        createdAt: data.createdAt?.toMillis() || Date.now()
+      sessions.push({
+        id: doc.id,
+        title: data.title || 'Untitled Session',
+        days: data.days || []
       });
     });
     
-    // Ensure we have all 5 days
-    for (let i = 1; i <= 5; i++) {
-      const dayId = `Day${i}`;
-      if (!daySessions.find(d => d.dayId === dayId)) {
-        daySessions.push({
-          dayId,
-          dayTitle: `Day ${i}`,
+    // If no sessions exist, create a default one
+    if (sessions.length === 0) {
+      const defaultSession = {
+        id: 'default_session',
+        title: 'Default Session',
+        days: Array.from({length: 5}, (_, i) => ({
+          id: `Day${i + 1}`,
           enabled: false,
-          sessions: [],
-          createdAt: Date.now()
-        });
-      }
+          videos: [],
+          permittedStudents: []
+        }))
+      };
+      sessions.push(defaultSession);
     }
 
-    res.json({ daySessions });
+    res.json({ success: true, data: { sessions } });
   } catch (error) {
-    console.error('Error fetching day sessions:', error);
-    res.status(500).json({ error: 'Failed to fetch day sessions' });
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch sessions' });
   }
 });
 
-// Create or update a session
+// Create a new session
+router.post('/sessions', verifyAdmin, async (req, res) => {
+  try {
+    const { title } = req.body;
+    
+    const db = admin.firestore();
+    const sessionData = {
+      title: title || 'New Session',
+      days: Array.from({length: 5}, (_, i) => ({
+        id: `Day${i + 1}`,
+        enabled: false,
+        videos: [],
+        permittedStudents: []
+      })),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const docRef = await db.collection('sessions').add(sessionData);
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        id: docRef.id, 
+        ...sessionData 
+      } 
+    });
+  } catch (error) {
+    console.error('Error creating session:', error);
+    res.status(500).json({ success: false, error: 'Failed to create session' });
+  }
+});
+
+// Create or update a session (legacy endpoint)
 router.post('/sessions/:dayId', verifyAdmin, async (req, res) => {
   try {
     const { dayId } = req.params;
@@ -280,7 +311,112 @@ router.put('/sessions/:dayId/sessions/:sessionId', verifyAdmin, async (req, res)
   }
 });
 
-// Update permitted students for a session
+// Update day enabled status within a session
+router.patch('/sessions/:sessionId/days/:dayId/enabled', verifyAdmin, async (req, res) => {
+  try {
+    const { sessionId, dayId } = req.params;
+    const { enabled } = req.body;
+    
+    const db = admin.firestore();
+    const sessionRef = db.collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+    
+    if (!sessionDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+    
+    const sessionData = sessionDoc.data();
+    const updatedDays = sessionData.days.map(day => 
+      day.id === dayId ? { ...day, enabled } : day
+    );
+    
+    await sessionRef.update({ days: updatedDays });
+    
+    res.json({ 
+      success: true, 
+      message: `Day ${dayId} ${enabled ? 'enabled' : 'disabled'} successfully` 
+    });
+  } catch (error) {
+    console.error('Error updating day enabled status:', error);
+    res.status(500).json({ success: false, error: 'Failed to update day status' });
+  }
+});
+
+// Update permitted students for a day within a session
+router.patch('/sessions/:sessionId/days/:dayId/students', verifyAdmin, async (req, res) => {
+  try {
+    const { sessionId, dayId } = req.params;
+    const { permittedStudents } = req.body;
+    
+    // Ensure deduplication
+    const deduplicatedStudents = [...new Set(permittedStudents || [])];
+    
+    const db = admin.firestore();
+    const sessionRef = db.collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+    
+    if (!sessionDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+    
+    const sessionData = sessionDoc.data();
+    const updatedDays = sessionData.days.map(day => 
+      day.id === dayId ? { ...day, permittedStudents: deduplicatedStudents } : day
+    );
+    
+    await sessionRef.update({ days: updatedDays });
+    
+    res.json({ 
+      success: true, 
+      message: 'Permitted students updated successfully',
+      dayId,
+      permittedStudents: deduplicatedStudents,
+      count: deduplicatedStudents.length
+    });
+  } catch (error) {
+    console.error('Error updating permitted students:', error);
+    res.status(500).json({ success: false, error: 'Failed to update permitted students' });
+  }
+});
+
+// Add video to a day within a session
+router.post('/sessions/:sessionId/days/:dayId/videos', verifyAdmin, async (req, res) => {
+  try {
+    const { sessionId, dayId } = req.params;
+    const { videoId, title, durationMs } = req.body;
+    
+    const db = admin.firestore();
+    const sessionRef = db.collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+    
+    if (!sessionDoc.exists) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+    
+    const sessionData = sessionDoc.data();
+    const updatedDays = sessionData.days.map(day => {
+      if (day.id === dayId) {
+        const newVideo = { id: videoId, title, durationMs };
+        return { ...day, videos: [...day.videos, newVideo] };
+      }
+      return day;
+    });
+    
+    await sessionRef.update({ days: updatedDays });
+    
+    res.json({ 
+      success: true, 
+      message: 'Video added to day successfully',
+      dayId,
+      videoId
+    });
+  } catch (error) {
+    console.error('Error adding video to day:', error);
+    res.status(500).json({ success: false, error: 'Failed to add video to day' });
+  }
+});
+
+// Update permitted students for a session (legacy endpoint)
 router.patch('/sessions/:dayId/students', verifyAdmin, async (req, res) => {
   try {
     const { dayId } = req.params;
