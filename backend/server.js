@@ -8,7 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/students');
-const uploadRoutes = require('./routes/upload');
+// Removed upload routes - now using direct upload with signed URLs
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,7 +39,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/students', studentRoutes);
-app.use('/api/upload', uploadRoutes);
+// Removed old upload routes - now using direct upload with signed URLs
 
 // Base route
 app.get('/', (req, res) => {
@@ -62,11 +62,8 @@ app.get('/', (req, res) => {
       students: {
         permittedDays: 'GET /students/permitted-days',
         videos: 'GET /students/videos/:dayId'
-      },
-      upload: {
-        mux: 'POST /api/upload/mux',
-        cloudinary: 'POST /api/upload/cloudinary'
       }
+      // Removed old upload endpoints - now using direct upload with signed URLs
     }
   });
 });

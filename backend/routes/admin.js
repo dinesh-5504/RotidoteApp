@@ -655,5 +655,127 @@ router.get('/analytics', verifyAdmin, async (req, res) => {
   }
 });
 
+// Generate signed upload URLs for direct upload to Mux and Cloudinary
+router.post('/upload/signed-urls', verifyAdmin, async (req, res) => {
+  try {
+    const { sessionId, dayId, title, durationMs } = req.body;
+    
+    if (!sessionId || !dayId || !title) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'sessionId, dayId, and title are required' 
+      });
+    }
+    
+    // Generate unique upload ID for tracking
+    const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Get Mux direct upload URL
+    const muxUploadData = await muxService.createDirectUpload(title);
+    
+    // Get Cloudinary signed upload URL
+    const cloudinaryUploadData = cloudinaryService.generateSignature('thumbnails', `${title}_${uploadId}`);
+    
+    res.json({
+      success: true,
+      muxUploadUrl: muxUploadData.uploadUrl,
+      muxAssetId: muxUploadData.assetId,
+      cloudinaryUploadUrl: `https://api.cloudinary.com/v1_1/${cloudinaryUploadData.cloudName}/image/upload`,
+      cloudinaryPublicId: `${title}_${uploadId}`,
+      uploadId: uploadId,
+      message: 'Signed upload URLs generated successfully'
+    });
+  } catch (error) {
+    console.error('Error generating signed upload URLs:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to generate signed upload URLs' 
+    });
+  }
+});
+
+// Complete upload by saving metadata after successful direct uploads
+router.post('/upload/complete', verifyAdmin, async (req, res) => {
+  try {
+    const { 
+      uploadId, 
+      sessionId, 
+      dayId, 
+      title, 
+      durationMs, 
+      muxAssetId, 
+      muxPlaybackId, 
+      cloudinaryPublicId, 
+      cloudinaryUrl 
+    } = req.body;
+    
+    if (!uploadId || !sessionId || !dayId || !title || !muxAssetId || !cloudinaryPublicId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'uploadId, sessionId, dayId, title, muxAssetId, and cloudinaryPublicId are required' 
+      });
+    }
+    
+    const db = admin.firestore();
+    
+    // Create video document in videos collection
+    const videoData = {
+      title,
+      durationMs: parseInt(durationMs) || 0,
+      sessionId,
+      dayId,
+      muxAssetId,
+      muxPlaybackId: muxPlaybackId || muxAssetId, // Use assetId as fallback
+      muxUrl: `https://stream.mux.com/${muxPlaybackId || muxAssetId}.m3u8`,
+      cloudinaryPublicId,
+      cloudinaryUrl: cloudinaryUrl || `https://res.cloudinary.com/${cloudinaryPublicId}`,
+      uploadedBy: req.user.uid,
+      uploadId,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+    
+    const videoDocRef = await db.collection('videos').add(videoData);
+    
+    // Add video to the session's day videos array
+    const sessionRef = db.collection('sessions').doc(sessionId);
+    const sessionDoc = await sessionRef.get();
+    
+    if (!sessionDoc.exists) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Session not found' 
+      });
+    }
+    
+    const sessionData = sessionDoc.data();
+    const updatedDays = sessionData.days.map(day => {
+      if (day.id === dayId) {
+        const newVideo = {
+          id: videoDocRef.id,
+          title,
+          durationMs: parseInt(durationMs) || 0
+        };
+        return { ...day, videos: [...day.videos, newVideo] };
+      }
+      return day;
+    });
+    
+    await sessionRef.update({ days: updatedDays });
+    
+    res.json({
+      success: true,
+      message: 'Video metadata saved successfully',
+      videoId: videoDocRef.id,
+      uploadId
+    });
+  } catch (error) {
+    console.error('Error completing upload:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to complete upload' 
+    });
+  }
+});
+
 module.exports = router;
 
