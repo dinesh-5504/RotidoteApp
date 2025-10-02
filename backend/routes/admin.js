@@ -731,6 +731,7 @@ router.post('/upload/complete', verifyAdmin, async (req, res) => {
       cloudinaryUrl: cloudinaryUrl || `https://res.cloudinary.com/${cloudinaryPublicId}`,
       uploadedBy: req.user.uid,
       uploadId,
+      status: 'processing', // Default status, will be updated by webhook
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
     

@@ -1,4 +1,5 @@
 const Mux = require('@mux/mux-node');
+const crypto = require('crypto');
 
 class MuxService {
   constructor() {
@@ -86,6 +87,62 @@ class MuxService {
     } catch (error) {
       console.error('Error deleting Mux asset:', error);
       throw new Error('Failed to delete Mux asset');
+    }
+  }
+
+  /**
+   * Verify Mux webhook signature
+   */
+  verifyWebhookSignature(rawBody, signature, timestamp) {
+    try {
+      const webhookSecret = process.env.MUX_WEBHOOK_SECRET;
+      if (!webhookSecret) {
+        throw new Error('MUX_WEBHOOK_SECRET not configured');
+      }
+
+      // Mux uses HMAC-SHA256 for webhook signatures
+      // Format: t=timestamp,v1=signature
+      const elements = signature.split(',');
+      let timestampElement, signatureElement;
+
+      for (const element of elements) {
+        const [key, value] = element.split('=');
+        if (key === 't') {
+          timestampElement = value;
+        } else if (key === 'v1') {
+          signatureElement = value;
+        }
+      }
+
+      if (!timestampElement || !signatureElement) {
+        throw new Error('Invalid signature format');
+      }
+
+      // Check timestamp (prevent replay attacks)
+      const currentTime = Math.floor(Date.now() / 1000);
+      const webhookTime = parseInt(timestampElement);
+      const timeDifference = Math.abs(currentTime - webhookTime);
+      
+      // Allow 5 minutes tolerance
+      if (timeDifference > 300) {
+        throw new Error('Webhook timestamp too old');
+      }
+
+      // Verify signature
+      const payload = `${timestampElement}.${rawBody}`;
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(payload, 'utf8')
+        .digest('hex');
+
+      if (expectedSignature !== signatureElement) {
+        throw new Error('Invalid webhook signature');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Webhook signature verification failed:', error);
+      return false;
     }
   }
 }
