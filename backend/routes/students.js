@@ -57,7 +57,7 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
             if (existingDay) {
               // Update existing day with additional session info
               existingDay.sessionCount += 1;
-              existingDay.totalVideoCount += day.videos?.length || 0;
+              existingDay.videoCount += day.videos?.length || 0;
               existingDay.sessions.push({
                 sessionId: session.id,
                 sessionTitle: session.title
@@ -68,7 +68,7 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
                 dayId: day.id,
                 title: day.title || `Day ${day.id.replace('Day', '')}`,
                 sessionCount: 1,
-                totalVideoCount: day.videos?.length || 0,
+                videoCount: day.videos?.length || 0,
                 sessions: [{
                   sessionId: session.id,
                   sessionTitle: session.title
