@@ -52,29 +52,14 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
           if (day.enabled && day.permittedStudents?.includes(userId)) {
             console.log(`✅ [DEBUG] User ${userId} is permitted for ${day.id} in session ${session.title}`);
             
-            // Check if we already have this day (avoid duplicates across sessions)
-            const existingDay = permittedDays.find(d => d.dayId === day.id);
-            if (existingDay) {
-              // Update existing day with additional session info
-              existingDay.sessionCount += 1;
-              existingDay.videoCount += day.videos?.length || 0;
-              existingDay.sessions.push({
-                sessionId: session.id,
-                sessionTitle: session.title
-              });
-            } else {
-              // Add new permitted day
-              permittedDays.push({
-                dayId: day.id,
-                title: day.title || `Day ${day.id.replace('Day', '')}`,
-                sessionCount: 1,
-                videoCount: day.videos?.length || 0,
-                sessions: [{
-                  sessionId: session.id,
-                  sessionTitle: session.title
-                }]
-              });
-            }
+            // Add each permitted day (allow duplicates across sessions)
+            permittedDays.push({
+              dayId: day.id,
+              title: day.title || `Day ${day.id.replace('Day', '')}`,
+              videoCount: day.videos?.length || 0,
+              sessionId: session.id,
+              sessionTitle: session.title
+            });
           } else {
             console.log(`❌ [DEBUG] User ${userId} is NOT permitted for ${day.id} in session ${session.title} (enabled: ${day.enabled})`);
           }
@@ -101,70 +86,69 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
   }
 });
 
-// Get videos for a specific day (from all permitted sessions)
-router.get('/videos/:dayId', verifyStudent, async (req, res) => {
+// Get videos for a specific day within a specific session
+router.get('/videos/:sessionId/:dayId', verifyStudent, async (req, res) => {
   try {
-    const { dayId } = req.params;
+    const { sessionId, dayId } = req.params;
     const userId = req.user.uid;
-    console.log(`🎥 [DEBUG] Fetching videos for ${dayId} for user ${userId}`);
+    console.log(`🎥 [DEBUG] Fetching videos for session ${sessionId}, day ${dayId} for user ${userId}`);
     
     const db = admin.firestore();
     
-    // Search across all sessions to find the matching dayId
-    console.log(`🔍 [DEBUG] Searching for day ${dayId} across all sessions`);
-    const sessionsSnapshot = await db.collection('sessions').get();
+    // Fetch the specific session document
+    console.log(`🔍 [DEBUG] Fetching session ${sessionId}`);
+    const sessionDoc = await db.collection('sessions').doc(sessionId).get();
     
-    let targetDay = null;
-    let targetSession = null;
+    if (!sessionDoc.exists) {
+      console.log(`❌ [DEBUG] Session ${sessionId} not found`);
+      return res.status(404).json({ error: 'Session not found' });
+    }
     
-    // Find the day across all sessions
-    sessionsSnapshot.forEach(doc => {
-      const session = doc.data();
-      if (session.days && Array.isArray(session.days)) {
-        const day = session.days.find(d => d.id === dayId);
-        if (day) {
-          targetDay = day;
-          targetSession = session;
-          console.log(`✅ [DEBUG] Found day ${dayId} in session ${session.title}`);
-        }
-      }
+    const sessionData = sessionDoc.data();
+    console.log(`📊 [DEBUG] Session ${sessionId} data:`, {
+      title: sessionData.title,
+      daysCount: sessionData.days?.length || 0
     });
     
-    if (!targetDay) {
-      console.log(`❌ [DEBUG] Day ${dayId} not found in any session`);
-      return res.status(404).json({ error: 'Day not found' });
+    // Find the matching day within this session
+    const day = sessionData.days?.find(d => d.id === dayId);
+    
+    if (!day) {
+      console.log(`❌ [DEBUG] Day ${dayId} not found in session ${sessionId}`);
+      return res.status(404).json({ error: 'Day not found in this session' });
     }
     
     console.log(`📊 [DEBUG] Day ${dayId} data:`, {
-      enabled: targetDay.enabled,
-      videosCount: targetDay.videos?.length || 0,
-      permittedStudentsCount: targetDay.permittedStudents?.length || 0,
+      enabled: day.enabled,
+      videosCount: day.videos?.length || 0,
+      permittedStudentsCount: day.permittedStudents?.length || 0,
       userId: userId
     });
     
-    if (!targetDay.enabled) {
+    if (!day.enabled) {
       console.log(`❌ [DEBUG] Day ${dayId} is not enabled`);
       return res.status(403).json({ error: 'Day is not enabled' });
     }
     
     // Verify userId is permitted for this day
-    if (!targetDay.permittedStudents?.includes(userId)) {
+    if (!day.permittedStudents?.includes(userId)) {
       console.log(`❌ [DEBUG] User ${userId} not permitted for day ${dayId}`);
       return res.status(403).json({ error: 'Not permitted for this day' });
     }
     
-    console.log(`✅ [DEBUG] User ${userId} is permitted for day ${dayId}`);
+    console.log(`✅ [DEBUG] User ${userId} is permitted for day ${dayId} in session ${sessionId}`);
     
     // Get all videos from this day's videos[] array
-    const dayVideoIds = targetDay.videos?.map(video => video.id) || [];
+    const dayVideoIds = day.videos?.map(video => video.id) || [];
     
     if (dayVideoIds.length === 0) {
       console.log(`ℹ️ [DEBUG] No videos found in day ${dayId}`);
       return res.json({
+        sessionId,
         dayId,
         videos: [],
         totalVideos: 0,
-        sessionTitle: targetSession.title
+        sessionTitle: sessionData.title
       });
     }
     
@@ -195,16 +179,17 @@ router.get('/videos/:dayId', verifyStudent, async (req, res) => {
       };
     });
     
-    console.log(`✅ [DEBUG] Returning ${videos.length} videos for ${dayId}`);
+    console.log(`✅ [DEBUG] Returning ${videos.length} videos for session ${sessionId}, day ${dayId}`);
     
     res.json({
+      sessionId,
       dayId,
       videos,
       totalVideos: videos.length,
-      sessionTitle: targetSession.title
+      sessionTitle: sessionData.title
     });
   } catch (error) {
-    console.error(`❌ [DEBUG] Error fetching videos for day ${req.params.dayId}:`, error);
+    console.error(`❌ [DEBUG] Error fetching videos for session ${req.params.sessionId}, day ${req.params.dayId}:`, error);
     console.error('Error details:', error.message);
     console.error('Error stack:', error.stack);
     res.status(500).json({ 
