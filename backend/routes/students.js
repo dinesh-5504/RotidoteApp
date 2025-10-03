@@ -43,6 +43,7 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
 
     sessionsSnapshot.forEach(doc => {
       const session = doc.data();
+      const sessionId = doc.id;  // <-- Firestore document ID
       console.log(`🔍 [DEBUG] Checking session ${session.title}: days = ${session.days?.length || 0}`);
 
       // Check each day in this session
@@ -57,8 +58,9 @@ router.get('/permitted-days', verifyStudent, async (req, res) => {
               dayId: day.id,
               title: day.title || `Day ${day.id.replace('Day', '')}`,
               videoCount: day.videos?.length || 0,
-              sessionId: session.id,
-              sessionTitle: session.title
+             //sessionId: session.id,
+             sessionId,   // ✅ use doc.id here
+            sessionTitle: session.title
             });
           } else {
             console.log(`❌ [DEBUG] User ${userId} is NOT permitted for ${day.id} in session ${session.title} (enabled: ${day.enabled})`);
